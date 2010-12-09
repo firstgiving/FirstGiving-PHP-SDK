@@ -1,0 +1,103 @@
+FirstGiving PHP SDK
+===================
+
+[FirstGiving Platform](http://www.firstgiving.com/) is
+a set of APIs that integrate our charity and donations capabilities into your website. Read more about
+[integrating FirstGiving with your web site](http://developers.firstgiving.com/)
+on the FirstGiving developer site.
+
+This repository contains the open source PHP SDK that allows you to utilize the
+above on your website. Except as otherwise noted, the FirstGiving PHP SDK
+is licensed under the Apache Licence, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0.html)
+
+
+Usage
+-----
+
+The [examples][examples] are a good place to start. The minimal you'll need to
+have is:
+
+<?php
+
+	// Include the FirstGiving API client library.
+	require_once 'FirstGivingAPIClient.php';
+	
+	// Setup the connection information.
+	$apiKey = 'YOURAPIKEY';
+	$apiSecret = 'YOURAPISECRET';
+	$apiEndpoint = 'https://api.firstgiving.com/';
+	
+	// Create an instance of the API client library.
+	$firstGivingApiClient = new FirstGivingAPIClient($apiKey, $apiSecret, $apiEndpoint)
+	
+	// Create a donation.
+	$donation = new FirstGivingDonation();
+	$donation->setCharityId('1234');
+	$donation->setDescription('Test transaction.');
+	
+	// Create a credit card payment.
+	$creditCardPayment = new FirstGivingCreditCardPayment();
+	$creditCardPayment->setCcNumber('4457010000000009');
+	$creditCardPayment->setCcType('VI');
+	$creditCardPayment->setCcExpDateMonth('01');
+	$creditCardPayment->setCcExpDateYear('2012');
+	$creditCardPayment->setCcCardValidationNum('349');
+	$creditCardPayment->setBillToFirstName('John');
+	$creditCardPayment->setBillToLastName('Smith');
+	$creditCardPayment->setBillToAddressLine1('1 Main St.');
+	$creditCardPayment->setBillToCity('Burlington');
+	$creditCardPayment->setBillToState('MA');
+	$creditCardPayment->setBillToZip('01803-3747');
+	$creditCardPayment->setBillToCountry('US');
+	$creditCardPayment->setBillToEmail('test@example.com');
+	$creditCardPayment->setBillToPhone('1233211234');
+	$creditCardPayment->setAmount(10.00);
+	$creditCardPayment->setCurrencyCode('USD');
+	
+	try {
+	
+		/* @var $firstGivingCreditCardDonationResponse FirstGivingCreditCardDonationResponse */
+		$firstGivingCreditCardDonationResponse = $firstGivingApiClient->makeCreditCardDonation($donation, $creditCardPayment, $_SERVER['REMOTE_ADDR']);
+		
+		echo 'The donation was processed.';
+	
+	
+	// Uncategorized error reported by FirstGiving...
+	} catch (FirstGivingGeneralException $e) {
+	
+		// Do some custom error handling....
+		$errorTarget = $e->getErrorTarget();
+		$friendlyConsumerError = $e->getFriendlyConsumerError();
+		$verboseExceptionMessage = $e->getVerboseExceptionMessage();
+		$rawResponse = $e->getRawResponse();
+		$responseCode = $e->getResponseCode();
+		
+	// Invalid input reported by FirstGiving....	
+	} catch (FirstGivingInvalidInputException $e) {
+	
+		// Here you can do something useful with fields that valid validation.
+		$errorTarget = $e->getErrorTarget();
+		$friendlyConsumerError = $e->getFriendlyConsumerError();
+		$verboseExceptionMessage = $e->getVerboseExceptionMessage();
+		$rawResponse = $e->getRawResponse();
+		$responseCode = $e->getResponseCode();
+		throw $e;
+	
+	// Something totally unexpected happened.	
+	} catch (Exception $e) {
+		$problem = $e->getMessage();
+	}
+
+
+[API Information]: http://developers.firstgiving.com/
+
+
+Feedback
+--------
+
+We are relying on the [GitHub issues tracker][issues] linked from above for
+feedback. File bugs or other issues [here][issues].
+
+[issues]: https://github.com/jonthepirate/FirstGiving-PHP-SDK/issues
+

@@ -44,6 +44,8 @@ abstract class FirstGivingAbstractPayment {
 	private $billToCountry;
 	private $billToEmail;
 	private $billToPhone;
+	private $amount;
+	private $currencyCode;
 		
 
 	/**
@@ -201,6 +203,13 @@ abstract class FirstGivingAbstractPayment {
 	}
 
 	/**
+	 * @return the $amount
+	 */
+	public function getAmount() {
+		return $this->amount;
+	}
+
+	/**
 	 * @param $billToMiddleName the $billToMiddleName to set
 	 */
 	public function setBillToMiddleName($billToMiddleName) {
@@ -215,12 +224,24 @@ abstract class FirstGivingAbstractPayment {
 	}
 
 	/**
+	 * @param $amount the $amount to set
+	 */
+	public function setAmount($amount) {
+		$this->amount = $amount;
+	}
+	/**
 	 * @return the $billToTitle
 	 */
 	public function getBillToTitle() {
 		return $this->billToTitle;
 	}
 
+	/**
+	 * @return the $currencyCode
+	 */
+	public function getCurrencyCode() {
+		return $this->currencyCode;
+	}
 
 	
 	/**
@@ -230,6 +251,12 @@ abstract class FirstGivingAbstractPayment {
 		$this->billToTitle = $billToTitle;
 	}
 
+	/**
+	 * @param $currencyCode the $currencyCode to set
+	 */
+	public function setCurrencyCode($currencyCode) {
+		$this->currencyCode = $currencyCode;
+	}
 
 	
 }

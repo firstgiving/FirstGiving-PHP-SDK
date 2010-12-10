@@ -34,7 +34,6 @@ class FirstGivingCreditCardDonationResponse {
 	private $transactionId;
 	private $rawResponse;
 	private $responseCode;
-	private $recurringBillingProfileId;
 	
 	/**
 	 * @return the $transactionId
@@ -75,19 +74,5 @@ class FirstGivingCreditCardDonationResponse {
 	public function setResponseCode($responseCode) {
 		$this->responseCode = $responseCode;
 	}
-	/**
-	 * @return the $recurringBillingProfileId
-	 */
-	public function getRecurringBillingProfileId() {
-		return $this->recurringBillingProfileId;
-	}
-
-	/**
-	 * @param $recurringBillingProfileId the $recurringBillingProfileId to set
-	 */
-	public function setRecurringBillingProfileId($recurringBillingProfileId) {
-		$this->recurringBillingProfileId = $recurringBillingProfileId;
-	}
-
 	
 }

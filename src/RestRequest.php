@@ -169,9 +169,8 @@ class RestRequest {
 	
 	protected function executeDelete ($ch)
 	{
-		$fullUrl = $this->url . '?' . $this->requestBody;
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		$this->doExecute($ch, $fullUrl, 'DELETE');
+		$this->doExecute($ch, $this->url, 'DELETE');
 	}
 	
 	

@@ -186,6 +186,8 @@ class FirstGivingAPIClient {
 		$restApiInputValues['billToEmail'] = $paymentInformationObject->getBillToEmail();
 		$restApiInputValues['billToPhone'] = $paymentInformationObject->getBillToPhone();
 		$restApiInputValues['remoteAddr'] = $remoteAddr;
+		$restApiInputValues['amount'] = $paymentInformationObject->getAmount();
+		$restApiInputValues['currencyCode'] = $paymentInformationObject->getCurrencyCode();
 		$restApiInputValues['charityId'] = $donationObject->getCharityId();
 		if($donationObject->getEventId() == null) {
 			$restApiInputValues['eventId'] = '';
@@ -200,11 +202,6 @@ class FirstGivingAPIClient {
 		$restApiInputValues['donationMessage'] = $donationObject->getDonationMessage();
 		$restApiInputValues['honorMemoryName'] = $donationObject->getHonorMemoryName();
 		$restApiInputValues['billingDescriptor'] = $paymentInformationObject->getBillingDescriptor();
-		$restApiInputValues['amount'] = $donationObject->getAmount();
-		$restApiInputValues['currencyCode'] = $donationObject->getCurrencyCode();
-		$restApiInputValues['recurringBillingFrequency'] = $donationObject->getRecurringBillingFrequency();
-		$restApiInputValues['recurringBillingTerm'] = $donationObject->getRecurringBillingTerm();
-		$restApiInputValues['recurringBillingAmount'] = $donationObject->getRecurringBillingAmount();
 		
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/donation/creditcard', 'POST', $restApiInputValues);
@@ -318,7 +315,7 @@ class FirstGivingAPIClient {
 			case '401':
 				
 				throw new FirstGivingGeneralException(  'You may not access the API with an application id of ' . $this->_application_id . ' and a security token of ' . $this->_security_token . '.',
-														'Problems were detecting when connecting to the donations gateway.',
+														'Problems were detected when connecting to the donations gateway.',
 														null,
 														$restRequest->getResponseBody(),
 														$restRequest->getHttpResponseCode());
@@ -462,10 +459,7 @@ class FirstGivingAPIClient {
 		$response->setTransactionId(current($xmlObject->firstGivingResponse->transactionId));
 		$response->setRawResponse($restRequestObject->getResponseBody());
 		$response->setResponseCode($restRequestObject->getHttpResponseCode());
-		// If a recurring billing profile id was detected, set it now
-		if(isset($xmlObject->firstGivingResponse->recurringBillingProfileId)) {
-			$response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringBillingProfileId));
-		}
+		
 		
 		return $response;
 		

@@ -5,7 +5,7 @@
 // | FirstGiving.com PHP API Client                                             |
 // +---------------------------------------------------------------------------+
 // | Copyright (c) 2010 FirstGiving.com                                        |
-// | All rights reserved.                                                      |
+// | All rights reserved.                                                       |
 // |                                                                           |
 // | Redistribution and use in source and binary forms, with or without        |
 // | modification, are permitted provided that the following conditions        |
@@ -40,6 +40,11 @@ class FirstGivingDonation {
 	private $personalIdentificationNumber;
 	private $donationMessage;
 	private $honorMemoryName;
+	private $amount;
+	private $currencyCode;
+	private $recurringBillingFrequency;
+	private $recurringBillingTerm;
+	private $recurringBillingAmount;
 	
 	/**
 	 * @return the $eventId
@@ -162,8 +167,74 @@ class FirstGivingDonation {
 	public function setHonorMemoryName($honorMemoryName) {
 		$this->honorMemoryName = $honorMemoryName;
 	}
+	/**
+	 * @return the $amount
+	 */
+	public function getAmount() {
+		return $this->amount;
+	}
 
+	/**
+	 * @return the $currencyCode
+	 */
+	public function getCurrencyCode() {
+		return $this->currencyCode;
+	}
 
+	/**
+	 * @return the $recurringBillingFrequency
+	 */
+	public function getrecurringBillingFrequency() {
+		return $this->recurringBillingFrequency;
+	}
 
+	/**
+	 * @return the $recurringBillingTerm
+	 */
+	public function getrecurringBillingTerm() {
+		return $this->recurringBillingTerm;
+	}
+
+	/**
+	 * @return the $recurringBillingAmount
+	 */
+	public function getrecurringBillingAmount() {
+		return $this->recurringBillingAmount;
+	}
+
+	/**
+	 * @param $amount the $amount to set
+	 */
+	public function setAmount($amount) {
+		$this->amount = $amount;
+	}
+
+	/**
+	 * @param $currencyCode the $currencyCode to set
+	 */
+	public function setCurrencyCode($currencyCode) {
+		$this->currencyCode = $currencyCode;
+	}
+
+	/**
+	 * @param $recurringBillingFrequency the $recurringBillingFrequency to set
+	 */
+	public function setrecurringBillingFrequency($recurringBillingFrequency) {
+		$this->recurringBillingFrequency = $recurringBillingFrequency;
+	}
+
+	/**
+	 * @param $recurringBillingTerm the $recurringBillingTerm to set
+	 */
+	public function setrecurringBillingTerm($recurringBillingTerm) {
+		$this->recurringBillingTerm = $recurringBillingTerm;
+	}
+
+	/**
+	 * @param $recurringBillingAmount the $recurringBillingAmount to set
+	 */
+	public function setrecurringBillingAmount($recurringBillingAmount) {
+		$this->recurringBillingAmount = $recurringBillingAmount;
+	}
 
 }

@@ -35,6 +35,8 @@ require_once dirname(__FILE__) . '/FirstGivingSayHello.php';
 require_once dirname(__FILE__) . '/FirstGivingDonation.php';
 require_once dirname(__FILE__) . '/FirstGivingAbstractPayment.php';
 require_once dirname(__FILE__) . '/FirstGivingCreditCardPayment.php';
+require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileRequest.php';
+require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileResponse.php';
 require_once dirname(__FILE__) . '/FirstGivingECheckPayment.php';
 require_once dirname(__FILE__) . '/FirstGivingCreditCardDonationResponse.php';
 require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutRequest.php';
@@ -156,6 +158,56 @@ class FirstGivingAPIClient {
 	}
 	
 	/**
+	 * Create a recurring donations profile.
+	 * @returns FirstGivingRecurringCreditCardProfileResponse
+	 */
+	public function createRecurringDonationProfile(FirstGivingDonation $donationObject, FirstGivingCreditCardPayment $paymentInformationObject, $remoteAddr, $frequency, $term) {
+
+		/* @var $restApiInputValues array */
+		$restApiInputValues = $this->assembleRestApiInputValuesForCreditCardDonation($donationObject, $paymentInformationObject, $remoteAddr);
+		
+		// Add the recurring values.
+        $restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
+        $restApiInputvalues['ccType'] = $paymentInformationObject->getCcType();
+		$restApiInputValues['recurringBillingFrequency'] = $frequency;
+		$restApiInputValues['recurringBillingTerm'] = $term;
+		
+		// Send the array of values to FirstGiving.
+		$restResponseObject = $this->sendApiRequest('/donation/recurringcreditcardprofile', 'POST', $restApiInputValues);
+
+		/* @var $firstGivingCCProfileResponseObject FirstGivingRecurringCreditCardProfileResponse */
+		$firstGivingCCProfileResponseObject = $this->createRecurringCreditCardProfileResponseObject($restResponseObject);
+		
+		return $firstGivingCCProfileResponseObject;
+		
+	}
+	
+	/**
+	 * Verifies if a message was sent from FirstGiving.
+	 * 
+	 * Returns bool to indicate if a message you received originated from FirstGiving.
+	 * 
+	 * @param string $message
+	 * @param string $signature
+	 * @returns bool
+	 */
+	public function messageWasSentFromFirstGiving($message, $signature) {
+		
+		/* @var $restApiInputValues array */
+		$restApiInputValues = array('signature'	=> $signature,
+									'message'	=> $message);
+		
+		// Send the array of values to FirstGiving.
+		$restResponseObject = $this->sendApiRequest('/verify', 'POST', $restApiInputValues);
+
+		/* @var $valid bool */
+		$valid = $this->getMessageWasFromFirstGiving($restResponseObject);
+		
+		return $valid == 1;
+		
+	}
+	
+	/**
 	 * Submit a donation to FirstGiving's web API.
 	 * 
 	 * @param FirstGivingDonation $donationObject
@@ -165,43 +217,8 @@ class FirstGivingAPIClient {
 	 */
 	public function makeCreditCardDonation(FirstGivingDonation $donationObject, FirstGivingCreditCardPayment $paymentInformationObject, $remoteAddr) {
 		
-		// Create an array of values to be passed to FirstGiving.
-		$restApiInputValues = array();
-		$restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
-		$restApiInputValues['ccType'] = $paymentInformationObject->getCcType();
-		$restApiInputValues['ccExpDateMonth'] = $paymentInformationObject->getCcExpDateMonth();
-		$restApiInputValues['ccExpDateYear'] = $paymentInformationObject->getCcExpDateYear();
-		$restApiInputValues['ccCardValidationNum'] = $paymentInformationObject->getCcCardValidationNum();
-		$restApiInputValues['billToTitle'] = $paymentInformationObject->getBillToTitle();
-		$restApiInputValues['billToFirstName'] = $paymentInformationObject->getBillToFirstName();
-		$restApiInputValues['billToMiddleName'] = $paymentInformationObject->getBillToMiddleName();
-		$restApiInputValues['billToLastName'] = $paymentInformationObject->getBillToLastName();
-		$restApiInputValues['billToAddressLine1'] = $paymentInformationObject->getBillToAddressLine1();
-		$restApiInputValues['billToAddressLine2'] = $paymentInformationObject->getBillToAddressLine2();
-		$restApiInputValues['billToAddressLine3'] = $paymentInformationObject->getBillToAddressLine3();
-		$restApiInputValues['billToCity'] = $paymentInformationObject->getBillToCity();
-		$restApiInputValues['billToState'] = $paymentInformationObject->getBillToState();
-		$restApiInputValues['billToZip'] = $paymentInformationObject->getBillToZip();
-		$restApiInputValues['billToCountry'] = $paymentInformationObject->getBillToCountry();
-		$restApiInputValues['billToEmail'] = $paymentInformationObject->getBillToEmail();
-		$restApiInputValues['billToPhone'] = $paymentInformationObject->getBillToPhone();
-		$restApiInputValues['remoteAddr'] = $remoteAddr;
-		$restApiInputValues['amount'] = $paymentInformationObject->getAmount();
-		$restApiInputValues['currencyCode'] = $paymentInformationObject->getCurrencyCode();
-		$restApiInputValues['charityId'] = $donationObject->getCharityId();
-		if($donationObject->getEventId() == null) {
-			$restApiInputValues['eventId'] = '';
-		} else {
-			$restApiInputValues['eventId'] = $donationObject->getEventId();
-		}
-		$restApiInputValues['fundraiserId'] = $donationObject->getFundraiserId();
-		$restApiInputValues['orderId'] = $donationObject->getOrderId();
-		$restApiInputValues['description'] = $donationObject->getDescription();
-		$restApiInputValues['reportDonationToTaxAuthority'] = ($donationObject->getReportDonationToTaxAuthority() == true) ? '1' : '0';
-		$restApiInputValues['personalIdentificationNumber'] = ($donationObject->getPersonalIdentificationNumber() == null) ? '' : $donationObject->getPersonalIdentificationNumber();
-		$restApiInputValues['donationMessage'] = $donationObject->getDonationMessage();
-		$restApiInputValues['honorMemoryName'] = $donationObject->getHonorMemoryName();
-		$restApiInputValues['billingDescriptor'] = $paymentInformationObject->getBillingDescriptor();
+		/* @var $restApiInputValues array */
+		$restApiInputValues = $this->assembleRestApiInputValuesForCreditCardDonation($donationObject, $paymentInformationObject, $remoteAddr);
 		
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/donation/creditcard', 'POST', $restApiInputValues);
@@ -459,10 +476,98 @@ class FirstGivingAPIClient {
 		$response->setTransactionId(current($xmlObject->firstGivingResponse->transactionId));
 		$response->setRawResponse($restRequestObject->getResponseBody());
 		$response->setResponseCode($restRequestObject->getHttpResponseCode());
-		
+		// If a recurring billing profile id was detected, set it now
+		if(isset($xmlObject->firstGivingResponse->recurringBillingProfileId)) {
+			$response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringBillingProfileId));
+		}
 		
 		return $response;
 		
+	}
+	
+	/**
+	 * Converts a generic REST request response into a proper FirstGiving credit card donation response object.
+	 * @param RestRequest $restRequestObject
+	 * @return FirstGivingRecurringCreditCardProfileResponse
+	 */
+	private function createRecurringCreditCardProfileResponseObject(RestRequest $restRequestObject) {
+		
+		// Create the response object.
+		$response = new FirstGivingRecurringCreditCardProfileResponse();
+
+        // Convert to an xml object.
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+
+		$response->setRawResponse($restRequestObject->getResponseBody());
+		$response->setResponseCode($restRequestObject->getHttpResponseCode());
+        $response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringDonationProfileId));
+
+		return $response;
+	}
+	
+	/**
+	 * Scans through xml returned from the verifiy method and returns the bool valid element text value.
+	 * @param RestRequest $restRequestObject
+	 * @returns bool
+	 */
+	private function getMessageWasFromFirstGiving(RestRequest $restRequestObject) {
+		// Convert to an xml object.
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+
+		return current($xmlObject->firstGivingResponse->valid);
+	}
+	 
+	
+/**
+	 * Creates an assoc array of all of the api input values.
+	 * 
+	 * @param FirstGivingDonation $donationObject
+	 * @param FirstGivingCreditCardPayment $paymentInformationObject
+	 * @param string $remoteAddr The IP address of the donor.
+	 * @returns array
+	 */
+	private function assembleRestApiInputValuesForCreditCardDonation(FirstGivingDonation $donationObject, FirstGivingCreditCardPayment $paymentInformationObject, $remoteAddr) {
+		// Create an array of values to be passed to FirstGiving.
+		$restApiInputValues = array();
+		$restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
+		$restApiInputValues['ccType'] = $paymentInformationObject->getCcType();
+		$restApiInputValues['ccExpDateMonth'] = $paymentInformationObject->getCcExpDateMonth();
+		$restApiInputValues['ccExpDateYear'] = $paymentInformationObject->getCcExpDateYear();
+		$restApiInputValues['ccCardValidationNum'] = $paymentInformationObject->getCcCardValidationNum();
+		$restApiInputValues['billToTitle'] = $paymentInformationObject->getBillToTitle();
+		$restApiInputValues['billToFirstName'] = $paymentInformationObject->getBillToFirstName();
+		$restApiInputValues['billToMiddleName'] = $paymentInformationObject->getBillToMiddleName();
+		$restApiInputValues['billToLastName'] = $paymentInformationObject->getBillToLastName();
+		$restApiInputValues['billToAddressLine1'] = $paymentInformationObject->getBillToAddressLine1();
+		$restApiInputValues['billToAddressLine2'] = $paymentInformationObject->getBillToAddressLine2();
+		$restApiInputValues['billToAddressLine3'] = $paymentInformationObject->getBillToAddressLine3();
+		$restApiInputValues['billToCity'] = $paymentInformationObject->getBillToCity();
+		$restApiInputValues['billToState'] = $paymentInformationObject->getBillToState();
+		$restApiInputValues['billToZip'] = $paymentInformationObject->getBillToZip();
+		$restApiInputValues['billToCountry'] = $paymentInformationObject->getBillToCountry();
+		$restApiInputValues['billToEmail'] = $paymentInformationObject->getBillToEmail();
+		$restApiInputValues['billToPhone'] = $paymentInformationObject->getBillToPhone();
+		$restApiInputValues['remoteAddr'] = $remoteAddr;
+		$restApiInputValues['charityId'] = $donationObject->getCharityId();
+		if($donationObject->getEventId() == null) {
+			$restApiInputValues['eventId'] = '';
+		} else {
+			$restApiInputValues['eventId'] = $donationObject->getEventId();
+		}
+		$restApiInputValues['fundraiserId'] = $donationObject->getFundraiserId();
+		$restApiInputValues['orderId'] = $donationObject->getOrderId();
+		$restApiInputValues['description'] = $donationObject->getDescription();
+		$restApiInputValues['reportDonationToTaxAuthority'] = ($donationObject->getReportDonationToTaxAuthority() == true) ? '1' : '0';
+		$restApiInputValues['personalIdentificationNumber'] = ($donationObject->getPersonalIdentificationNumber() == null) ? '' : $donationObject->getPersonalIdentificationNumber();
+		$restApiInputValues['donationMessage'] = $donationObject->getDonationMessage();
+		$restApiInputValues['honorMemoryName'] = $donationObject->getHonorMemoryName();
+		$restApiInputValues['billingDescriptor'] = $paymentInformationObject->getBillingDescriptor();
+		$restApiInputValues['amount'] = $donationObject->getAmount();
+		$restApiInputValues['currencyCode'] = $donationObject->getCurrencyCode();
+		$restApiInputValues['recurringBillingFrequency'] = $donationObject->getRecurringBillingFrequency();
+		$restApiInputValues['recurringBillingTerm'] = $donationObject->getRecurringBillingTerm();
+		
+		return $restApiInputValues;
 	}
 	
 }

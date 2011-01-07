@@ -23,7 +23,7 @@ class RestRequest {
 	public $applicationId;
 	public $securityToken;
 	// How long before curl times out?
-	public $curlTimeoutSeconds = 10;
+	public $curlTimeoutSeconds = 50;
 	// Zend_Log
 	private $_logger;
 	
@@ -169,8 +169,9 @@ class RestRequest {
 	
 	protected function executeDelete ($ch)
 	{
+		$fullUrl = $this->url . '?' . $this->requestBody;
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		$this->doExecute($ch, $this->url, 'DELETE');
+		$this->doExecute($ch, $fullUrl, 'DELETE');
 	}
 	
 	

@@ -74,5 +74,4 @@ class FirstGivingCreditCardDonationResponse {
 	public function setResponseCode($responseCode) {
 		$this->responseCode = $responseCode;
 	}
-	
 }

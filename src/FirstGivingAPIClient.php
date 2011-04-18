@@ -49,19 +49,19 @@ require_once dirname(__FILE__) . '/Exception/FirstGivingInvalidInputException.ph
 
 
 class FirstGivingAPIClient {
-	
+
 	protected $_application_id;
 	protected $_security_token;
 	protected $_api_endpoint;
-	
+
 	/* @var RestRequest */
 	protected $_last_rest_request;
-	
+
 	protected $_logger;
-	
+
 	/**
 	 * Creates an instance of the API client.
-	 * 
+	 *
 	 * @param string $applicationId
 	 * @param string $securityToken
 	 * @param string $apiEndpoint
@@ -72,7 +72,7 @@ class FirstGivingAPIClient {
 		$this->_api_endpoint = $apiEndpoint;
 		$this->_logger = $logger;
 	}
-	
+
 	/**
 	 * Gives you the RestRequest object that describes the last REST request.
 	 * @return RestRequest
@@ -80,39 +80,39 @@ class FirstGivingAPIClient {
 	public function getLastRestRequest() {
 		return $this->_last_rest_request;
 	}
-	
-	
+
+
 	/**
 	 * Allows you to verify your ability to talk to the server. This should only be used for initial debugging purposes.
-	 * 
+	 *
 	 * @return FirstGivingSayHello
 	 */
 	public function sayHello() {
-		
+
 		// Send the array of values to FirstGiving.
 		/* @var $restRequestObject RestRequest */
 		$restRequestObject = $this->sendApiRequest('/default/test/0', 'GET');
 
 		/* @var $firstGivingResponseObject FirstGivingSayHello */
 		$firstGivingResponseObject = $this->createSayHelloObject($restRequestObject);
-		
+
 		return $firstGivingResponseObject;
-		
+
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param FirstGivingPaypalExpressCheckoutRequest $expressCheckoutRedirectRequest
 	 * $remoteAddr string IP address of the remote user's computer.
 	 * @return FirstGivingPaypalExpressCheckoutRedirectResponse
 	 */
 	public function getExpressCheckoutRedirect(FirstGivingPaypalExpressCheckoutRequest $expressCheckoutRedirectRequest, $remoteAddr = null) {
-		
+
 		// If no remote addr was manually passed, set it to the remote addr reported by the web server.
 		if($remoteAddr == null) {
 			$remoteAddr = $_SERVER['REMOTE_ADDR'];
 		}
-		
+
 		// Create an array of values to be passed to FirstGiving.
 		$restApiInputValues = array();
 		$restApiInputValues['amount'] = $expressCheckoutRedirectRequest->getAmount();
@@ -127,36 +127,36 @@ class FirstGivingAPIClient {
 		$restApiInputValues['remoteAddr'] = $remoteAddr;
 		$restApiInputValues['reportDonationToTaxAuthority'] = ($expressCheckoutRedirectRequest->getReportDonationToTaxAuthority() == true) ? '1' : '0';
 		$restApiInputValues['personalIdentificationNumber'] = ($expressCheckoutRedirectRequest->getPersonalIdentificationNumber() == null) ? '' : $expressCheckoutRedirectRequest->getPersonalIdentificationNumber();
-		
+
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutrequest', 'GET', $restApiInputValues);
 
 		/* @var $firstGivingPaypalCreditCardDonationResponse FirstGivingPaypalCreditCardDonationResponse */
 		$firstGivingPaypalCreditCardDonationResponse = $this->createPaypalExpressCheckoutRedirectResponseObject($restResponseObject);
-		
+
 		return $firstGivingPaypalCreditCardDonationResponse;
 	}
-	
+
 	/**
 	 * Captures a payment from the buyer identified by $expresscheckoutsessionid.
 	 * @param $expresscheckoutsessionid
 	 * @return FirstGivingPaypalExpressCheckoutPaymentResponse
 	 */
 	public function captureExpressCheckoutPayment($expresscheckoutsessionid) {
-		
+
 		// Create an array of values to be passed to FirstGiving.
 		$restApiInputValues = array();
 		$restApiInputValues['expresscheckoutsession'] = $expresscheckoutsessionid;
-		
+
     	// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutpayment', 'POST', $restApiInputValues);
-    	
+
 		/* @var $firstGivingPaypalExpressCheckoutPaymentResponse FirstGivingPaypalExpressCheckoutPaymentResponse */
 		$firstGivingPaypalExpressCheckoutPaymentResponse = $this->createPaypalExpressCheckoutPaymentResponpseObject($restResponseObject);
-		
+
 		return $firstGivingPaypalExpressCheckoutPaymentResponse;
 	}
-	
+
 	/**
 	 * Create a recurring donations profile.
 	 * @returns FirstGivingRecurringCreditCardProfileResponse
@@ -165,71 +165,71 @@ class FirstGivingAPIClient {
 
 		/* @var $restApiInputValues array */
 		$restApiInputValues = $this->assembleRestApiInputValuesForCreditCardDonation($donationObject, $paymentInformationObject, $remoteAddr);
-		
+
 		// Add the recurring values.
         $restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
         $restApiInputvalues['ccType'] = $paymentInformationObject->getCcType();
 		$restApiInputValues['recurringBillingFrequency'] = $frequency;
 		$restApiInputValues['recurringBillingTerm'] = $term;
-		
+
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/donation/recurringcreditcardprofile', 'POST', $restApiInputValues);
 
 		/* @var $firstGivingCCProfileResponseObject FirstGivingRecurringCreditCardProfileResponse */
 		$firstGivingCCProfileResponseObject = $this->createRecurringCreditCardProfileResponseObject($restResponseObject);
-		
+
 		return $firstGivingCCProfileResponseObject;
-		
+
 	}
-	
+
 	/**
 	 * Verifies if a message was sent from FirstGiving.
-	 * 
+	 *
 	 * Returns bool to indicate if a message you received originated from FirstGiving.
-	 * 
+	 *
 	 * @param string $message
 	 * @param string $signature
 	 * @returns bool
 	 */
 	public function messageWasSentFromFirstGiving($message, $signature) {
-		
+
 		/* @var $restApiInputValues array */
 		$restApiInputValues = array('signature'	=> $signature,
 									'message'	=> $message);
-		
+
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/verify', 'POST', $restApiInputValues);
 
 		/* @var $valid bool */
 		$valid = $this->getMessageWasFromFirstGiving($restResponseObject);
-		
+
 		return $valid == 1;
-		
+
 	}
-	
+
 	/**
 	 * Submit a donation to FirstGiving's web API.
-	 * 
+	 *
 	 * @param FirstGivingDonation $donationObject
 	 * @param FirstGivingCreditCardPayment $paymentInformationObject
 	 * @param string $remoteAddr The IP address of the donor.
 	 * @return FirstGivingCreditCardDonationResponse
 	 */
 	public function makeCreditCardDonation(FirstGivingDonation $donationObject, FirstGivingCreditCardPayment $paymentInformationObject, $remoteAddr) {
-		
+
 		/* @var $restApiInputValues array */
 		$restApiInputValues = $this->assembleRestApiInputValuesForCreditCardDonation($donationObject, $paymentInformationObject, $remoteAddr);
-		
+
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/donation/creditcard', 'POST', $restApiInputValues);
 
 		/* @var $firstGivingResponseObject FirstGivingCreditCardDonationResponse */
 		$firstGivingResponseObject = $this->createCreditCardDonationResponseObject($restResponseObject);
-		
+
 		return $firstGivingResponseObject;
-		
+
 	}
-	
+
 	/**
 	 * Returns the original array with nulls removed.
 	 * @param $inputArray
@@ -238,38 +238,38 @@ class FirstGivingAPIClient {
 		$newArray = array();
 		foreach($inputArray as $thisKey => $thisValue) {
 			if($thisValue !== null) {
-				$newArray[$thisKey] = $thisValue;	
+				$newArray[$thisKey] = $thisValue;
 			}
 		}
 		return $newArray;
 	}
-	
+
 	/**
 	 * Returns all of the information about the buyer as provided by Paypal's express checkout interface.
 	 * @param $expresscheckoutsessionid
 	 * @return FirstGivingPaypalExpressCheckoutBuyerInformation
 	 */
 	public function getPaypalExpressCheckoutBuyerInformation($expresscheckoutsessionid) {
-		
+
 		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutbuyerinformation/'.$expresscheckoutsessionid, 'GET', array());
-		
+
 		/* @var $firstGivingPaypalExpressCheckoutBuyerInformation FirstGivingPaypalExpressCheckoutBuyerInformation */
 		$firstGivingPaypalExpressCheckoutBuyerInformation = $this->createPaypalExpressCheckoutBuyerInformationObject($restResponseObject);
-		
+
 		return $firstGivingPaypalExpressCheckoutBuyerInformation;
 	}
-	
+
 	/**
 	 * Loads a buyer information object.
 	 * @param $restResponseObject
 	 * @return FirstGivingPaypalExpressCheckoutBuyerInformation
 	 */
 	public function createPaypalExpressCheckoutBuyerInformationObject($restResponseObject) {
-		
+
 		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restResponseObject->getResponseBody());
-		
+
 		$buyerInfo = new FirstGivingPaypalExpressCheckoutBuyerInformation();
 		$buyerInfo->setFirstName(current($xmlObject->firstGivingResponse->firstName));
 		$buyerInfo->setLastName(current($xmlObject->firstGivingResponse->lastName));
@@ -277,19 +277,19 @@ class FirstGivingAPIClient {
 		$buyerInfo->setCountry(current($xmlObject->firstGivingResponse->country));
 		$buyerInfo->setAddress1(current($xmlObject->firstGivingResponse->address1));
 		if(current($xmlObject->firstGivingResponse->address2) !== false) {
-			$buyerInfo->setAddress2(current($xmlObject->firstGivingResponse->address2));			
+			$buyerInfo->setAddress2(current($xmlObject->firstGivingResponse->address2));
 		}
 		$buyerInfo->setCity(current($xmlObject->firstGivingResponse->city));
 		$buyerInfo->setState(current($xmlObject->firstGivingResponse->state));
 		$buyerInfo->setZip(current($xmlObject->firstGivingResponse->zip));
 		$buyerInfo->setCurrencyCode(current($xmlObject->firstGivingResponse->currencyCode));
 		$buyerInfo->setAmount(current($xmlObject->firstGivingResponse->amount));
-		
+
 		return $buyerInfo;
-		
+
 	}
-	
-	
+
+
 	/**
 	 * Post some XML content to litle and return the Zend_Http_Response response object.
 	 * PUBLIC ONLY FOR MOCKING IN PHPUNIT.
@@ -299,58 +299,58 @@ class FirstGivingAPIClient {
 	 * @return RestRequest
 	 */
 	public function sendApiRequest($resourceName, $httpMethod, $arrayOfValues=array()) {
-		
+
 		// Create an object to store the HTTP response values.
 		$stdObject = new stdClass();
-		
+
 		// Create an instance of curl.
 		$curlHandle = curl_init();
-		
-		// I expect the resource name to always be prefixed with a beginning slash. 
-		// Example: "/donation/creditcard". 
+
+		// I expect the resource name to always be prefixed with a beginning slash.
+		// Example: "/donation/creditcard".
 		// If we find the initial slash, remove it so that we have a valid abs link.
 		if(substr($resourceName, 0,1) == '/') {
 			$resourceName = substr($resourceName, 1);
 		}
-		
+
 		// Create the api URL.
 		$apiUrl = $this->_api_endpoint . $resourceName;
-		
+
 		// Create a REST request.
 		$restRequest = new RestRequest($this->_application_id, $this->_security_token, $apiUrl, strtoupper($httpMethod), $arrayOfValues, $this->_logger);
-		
+
 		// Execute the request.
 		$restRequest->execute();
-		
+
 		// Remember the last request.
 		$this->_last_rest_request = $restRequest;
-		
+
 		// Handle error responses from the server.
 		switch ($restRequest->getHttpResponseCode()) {
-			
+
 			// If an unauthorized response was returned, throw an unauthorized exception.
 			case '401':
-				
+
 				throw new FirstGivingGeneralException(  'You may not access the API with an application id of ' . $this->_application_id . ' and a security token of ' . $this->_security_token . '.',
 														'Problems were detected when connecting to the donations gateway.',
 														null,
 														$restRequest->getResponseBody(),
 														$restRequest->getHttpResponseCode());
 				break;
-				
+
 				// ($verboseMessage, $friendlyMessage='An error occurred. No further details are available.', $errorTarget=null, $rawResponse=null, $responseCode=null
-				
+
 			// If invalid input, throw an error.
 			case '400':
-				
+
 				// Convert to an xml object.
 				$xmlObject = simplexml_load_string($restRequest->getResponseBody());
-				
+
 				// Try to capture error messages.
 				$verboseErrorMessage = null;
 				$friendlyErrorMessage = null;
 				$errorTarget = null;
-				
+
 				if(isset($xmlObject->firstGivingResponse['verboseErrorMessage'])) {
 					$verboseErrorMessage = current($xmlObject->firstGivingResponse['verboseErrorMessage']);
 				}
@@ -362,44 +362,48 @@ class FirstGivingAPIClient {
 				}
 				throw new FirstGivingInvalidInputException($verboseErrorMessage, $friendlyErrorMessage, $errorTarget, $restRequest->getResponseBody(), $restRequest->getHttpResponseCode());
 				break;
-				
+
 			// If messed up application.
 			case '500':
-				
+
+				// What was the raw response?
+				$rawResponse = $restRequest->getResponseBody();
+
 				// Convert to an xml object.
-				$xmlObject = simplexml_load_string($restRequest->getResponseBody());
-				
+				$xmlObject = simplexml_load_string($rawResponse);
+
 				// Try to capture error messages.
 				$verboseErrorMessage = null;
 				$friendlyErrorMessage = null;
 				$errorTarget = null;
-				
+
 				if(isset($xmlObject->firstGivingResponse['verboseErrorMessage'])) {
 					$verboseErrorMessage = current($xmlObject->firstGivingResponse['verboseErrorMessage']);
 				}
-				if(isset($xmlObject->firstGivingResponse['verboseErrorMessage'])) {
+				if(isset($xmlObject->firstGivingResponse['friendlyErrorMessage'])) {
 					$friendlyErrorMessage = current($xmlObject->firstGivingResponse['friendlyErrorMessage']);
 				}
 				if(isset($xmlObject->firstGivingResponse['errorTarget'])) {
 					$errorTarget = current($xmlObject->firstGivingResponse['errorTarget']);
 				}
-				throw new FirstGivingGeneralException($verboseErrorMessage, $friendlyErrorMessage, $errorTarget);
+
+				throw new FirstGivingGeneralException($verboseErrorMessage, $friendlyErrorMessage, $errorTarget, $rawResponse, $restRequest->getHttpResponseCode());
 				break;
-				
+
 		}
-		
+
 		if($restRequest->getHttpResponseCode() == '401') {
-			
+
 		}
-		
+
 		// If the HTTP response  it was not equal to "400" (created), then
 		// we've got a problem.
 		if($this->_last_rest_request->getHttpResponseCode() !== '400') {
-			
+
 		}
-		
+
 		return $restRequest;
-		
+
 	}
 
 	/**
@@ -408,71 +412,71 @@ class FirstGivingAPIClient {
 	 * @return FirstGivingSayHello
 	 */
 	private function createSayHelloObject(RestRequest $restRequestObject) {
-		
+
 		// Create the result object.
 		$helloResponse = new FirstGivingSayHello();
-		
+
 		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		
+
 		$helloResponse->setFriendlyMessage(current($xmlObject->firstGivingResponse->friendlyMessage));
-		
+
 		return $helloResponse;
 	}
-	
+
 	/**
 	 * Converts a generic REST request response into a proper FirstGiving Paypal donation response object.
 	 * @param RestRequest $restRequestObject
 	 * @return FirstGivingPaypalExpressCheckoutRedirectResponse
 	 */
 	private function createPaypalExpressCheckoutRedirectResponseObject(RestRequest $restRequestObject) {
-		
+
 		// Create the response object.
 		/* @var $response FirstGivingPaypalExpressCheckoutRedirectResponse */
 		$response = new FirstGivingPaypalExpressCheckoutRedirectResponse();
-		
+
 		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		
+
 		$response->setRedirectUrl(current($xmlObject->firstGivingResponse->redirectUrl));
-		
+
 		return $response;
-		
+
 	}
-	
+
 	/**
 	 * Converts a generic REST response into a proper FirstGiving Paypal payment response object.
 	 * @param RestRequest $restRequestObject
 	 * @return FirstGivingPaypalExpressCheckoutPaymentResponse
 	 */
 	private function createPaypalExpressCheckoutPaymentResponpseObject(RestRequest $restRequestObject) {
-		
+
 		// Create the response object.
 		/* @var $paymentResponse FirstGivingPaypalExpressCheckoutPaymentResponse */
 		$paymentResponse = new FirstGivingPaypalExpressCheckoutPaymentResponse();
-		
+
 		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		
+
 		$paymentResponse->setTransactionId(current($xmlObject->firstGivingResponse->transactionId));
-		
+
 		return $paymentResponse;
-		
+
 	}
-	
+
 	/**
 	 * Converts a generic REST request response into a proper FirstGiving credit card donation response object.
 	 * @param RestRequest $restRequestObject
 	 * @return FirstGivingCreditCardDonationResponse
 	 */
 	private function createCreditCardDonationResponseObject(RestRequest $restRequestObject) {
-		
+
 		// Create the response object.
 		$response = new FirstGivingCreditCardDonationResponse();
-		
+
 		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		
+
 		$response->setTransactionId(current($xmlObject->firstGivingResponse->transactionId));
 		$response->setRawResponse($restRequestObject->getResponseBody());
 		$response->setResponseCode($restRequestObject->getHttpResponseCode());
@@ -480,18 +484,18 @@ class FirstGivingAPIClient {
 		if(isset($xmlObject->firstGivingResponse->recurringBillingProfileId)) {
 			$response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringBillingProfileId));
 		}
-		
+
 		return $response;
-		
+
 	}
-	
+
 	/**
 	 * Converts a generic REST request response into a proper FirstGiving credit card donation response object.
 	 * @param RestRequest $restRequestObject
 	 * @return FirstGivingRecurringCreditCardProfileResponse
 	 */
 	private function createRecurringCreditCardProfileResponseObject(RestRequest $restRequestObject) {
-		
+
 		// Create the response object.
 		$response = new FirstGivingRecurringCreditCardProfileResponse();
 
@@ -504,7 +508,7 @@ class FirstGivingAPIClient {
 
 		return $response;
 	}
-	
+
 	/**
 	 * Scans through xml returned from the verifiy method and returns the bool valid element text value.
 	 * @param RestRequest $restRequestObject
@@ -516,11 +520,11 @@ class FirstGivingAPIClient {
 
 		return current($xmlObject->firstGivingResponse->valid);
 	}
-	 
-	
+
+
 /**
 	 * Creates an assoc array of all of the api input values.
-	 * 
+	 *
 	 * @param FirstGivingDonation $donationObject
 	 * @param FirstGivingCreditCardPayment $paymentInformationObject
 	 * @param string $remoteAddr The IP address of the donor.
@@ -566,8 +570,8 @@ class FirstGivingAPIClient {
 		$restApiInputValues['currencyCode'] = $donationObject->getCurrencyCode();
 		$restApiInputValues['recurringBillingFrequency'] = $donationObject->getRecurringBillingFrequency();
 		$restApiInputValues['recurringBillingTerm'] = $donationObject->getRecurringBillingTerm();
-		
+
 		return $restApiInputValues;
 	}
-	
+
 }

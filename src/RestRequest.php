@@ -2,13 +2,13 @@
 
 /**
  * This class helps submit rest requests and manage rest responses.
- * 
+ *
  * Based on the tutorial located at "http://www.gen-x-design.com/archives/create-a-rest-api-with-php/".
  * @author jonathanblock
  *
  */
 class RestRequest {
-	
+
 	//THESE METHODS ARE ONLY PUBLIC SO THAT I CAN MANIIUPLATE THEM IN A MOCK UNIT TEST.
 	// I DID NOT WRITE THIS CLASS.. SHOULD PROBABLY BE REWRITTEN AT SOME POINT. HAVE A NICE DAY.
 	public $url;
@@ -25,8 +25,9 @@ class RestRequest {
 	// How long before curl times out?
 	public $curlTimeoutSeconds = 50;
 	// Zend_Log
+    // @todo define logger interface
 	private $_logger;
-	
+
 	/**
 	 * Returns the http response code of the loaded response.
 	 * @return string
@@ -34,9 +35,9 @@ class RestRequest {
 	public function getHttpResponseCode() {
 		return $this->responseInfo['http_code'];
 	}
-	
+
 	public function __construct($applicationId, $securityToken, $url = null, $verb = 'GET', $requestBody = null, $logger=null) {
-		
+
 		$this->applicationId = $applicationId;
 		$this->securityToken = $securityToken;
 		$this->url = $url;
@@ -49,12 +50,12 @@ class RestRequest {
 		$this->responseBody = null;
 		$this->responseInfo = null;
 		$this->_logger = $logger;
-		
+
 		if ($this->requestBody !== null) {
 			$this->buildPostBody ();
 		}
 	}
-	
+
 	/**
 	 * Log something to to the customized log.
 	 * @param unknown_type $logLine
@@ -62,14 +63,14 @@ class RestRequest {
 	 */
 	protected function log($logLine, $severity=null) {
 		if($severity == null) {
-			$severity = Zend_Log::INFO;
+			$severity = LOG_INFO;
 		}
-		
+
 		if($this->_logger !== null) {
 			$this->_logger->log($logLine, $severity);
 		}
 	}
-	
+
 	public function flush() {
 		$this->requestBody = null;
 		$this->requestLength = 0;
@@ -77,7 +78,7 @@ class RestRequest {
 		$this->responseBody = null;
 		$this->responseInfo = null;
 	}
-	
+
 	/**
 	 * Returns the contents of the response body from the request.
 	 * @return string
@@ -85,7 +86,7 @@ class RestRequest {
 	public function getResponseBody() {
 		return $this->responseBody;
 	}
-	
+
 	/**
 	 * Gets the raw reqest body.
 	 * @return string
@@ -105,9 +106,9 @@ class RestRequest {
 		{
 			throw new InvalidArgumentException('Invalid data input for postBody.  Array expected');
 		}
-		
+
 		$dataString = '';
-		
+
 		// Loop over each array element and create a URL encoded string.
 		foreach($data as $thisKey => $thisValue) {
 			if(strlen($dataString)) {
@@ -115,14 +116,14 @@ class RestRequest {
 			}
 			$dataString .= $thisKey . '=' . urlencode($thisValue);
 		}
-		
+
 		// Hm... this function does not concat in the null values.
 		// $data = http_build_query($data, '', '&');
-		
+
 		$this->requestBody = $dataString;
 	}
-	
-	
+
+
 	protected function executePost ($ch)
 	{
 		if (!is_string($this->requestBody))
@@ -132,19 +133,19 @@ class RestRequest {
 
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->requestBody);
 		curl_setopt($ch, CURLOPT_POST, 1);
-		
+
 		$this->doExecute($ch, $this->url, 'POST');
 	}
-	
-	
+
+
 	protected function executeGet ($ch)
 	{
 		$fullUrl = $this->url . '?' . $this->requestBody;
 		$this->doExecute($ch, $fullUrl, 'GET');
 	}
-	
-	
-	
+
+
+
 	protected function executePut ($ch)
 	{
 		if (!is_string($this->requestBody))
@@ -165,16 +166,16 @@ class RestRequest {
 
 		fclose($fh);
 	}
-	
-	
+
+
 	protected function executeDelete ($ch)
 	{
 		$fullUrl = $this->url . '?' . $this->requestBody;
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
 		$this->doExecute($ch, $fullUrl, 'DELETE');
 	}
-	
-	
+
+
 	public function execute ()
 	{
 		$ch = curl_init();
@@ -210,13 +211,17 @@ class RestRequest {
 			curl_close($ch);
 			throw $e;
 		}
-		
+
 		return $this->responseBody;
 
 	}
 
+    private function _gettime() {
+        return floor(microtime(true)*1000);
+    }
+
 	/**
-	 * 
+	 *
 	 * @param curlresource $curlHandle
 	 * @param string $url URL of endpoint.
 	 */
@@ -224,40 +229,39 @@ class RestRequest {
 	{
 		// Set a bunch of random options.
 		$this->setCurlOpts($curlHandle);
-		
+
 		// Point at the correct endpoint.
 		curl_setopt($curlHandle, CURLOPT_URL, $url);
-		
+
 		// Finish the log line.
 		$this->log('About to send an "' . $method . '" request to the following URL "' . $url . '".');
-		
+
 		// Create a timer.
-		$timer = new FirstGiving_Utility_Date_Timer();
- 
+        $timeStart = $this->_gettime();
+
 		// Connect to the endpoint..
 		$this->responseBody = curl_exec($curlHandle);
-		
+
 	 	// Stop the timer.
-		$milliseconds = $timer->getElapsedTime();
- 		
+		$milliseconds = $this->_gettime() - $timeStart;
+
 		// If the curl request did not work, throw an exception.
 		if($this->responseBody === false)
 		{
 			$capturedCurlErrorMessage = curl_error($curlHandle);
 			$verboseErrorMessage = 'Curl errored after ' . $milliseconds . ' milliseconds with the following message: "' . $capturedCurlErrorMessage . '" when accessing "' . $url . '".';
-			$this->log($verboseErrorMessage, Zend_Log::ERR);
+			$this->log($verboseErrorMessage, LOG_ERR);
 		    throw new FirstGivingCurlException($verboseErrorMessage, 'We had trouble connecting to the donations processing system.', null, $verboseErrorMessage, $this->getHttpResponseCode());
 		} else {
 			// Finish the log line.
 			$this->log('Completed curl request after ' . $milliseconds . ' milliseconds with the following response body: "' . $this->responseBody . '".');
 		}
-		
-		
+
 		$this->responseInfo	= curl_getinfo($curlHandle);
 
 		curl_close($curlHandle);
 	}
-	
+
 	/**
 	 * Sets general opts used by curl.
 	 * @param unknown_type $curlHandle
@@ -272,8 +276,8 @@ class RestRequest {
 		// curl_setopt($curlHandle, CURLOPT_HTTPHEADER, array ('Accept: ' . $this->acceptType));
 		curl_setopt($curlHandle, CURLOPT_HTTPHEADER, array('JG_APPLICATIONKEY:'.$this->applicationId, 'JG_SECURITYTOKEN:'.$this->securityToken));
 	}
-	
-	
+
+
 	protected function setAuth (&$curlHandle)
 	{
 		if ($this->username !== null && $this->password !== null)

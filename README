@@ -29,12 +29,14 @@ have is:
 	$apiEndpoint = 'https://api.firstgiving.com/';
 	
 	// Create an instance of the API client library.
-	$firstGivingApiClient = new FirstGivingAPIClient($apiKey, $apiSecret, $apiEndpoint)
+	$firstGivingApiClient = new FirstGivingAPIClient($apiKey, $apiSecret, $apiEndpoint);
 	
 	// Create a donation.
 	$donation = new FirstGivingDonation();
 	$donation->setCharityId('1234');
 	$donation->setDescription('Test transaction.');
+	$donation->setAmount(10.00);
+	$donation->setCurrencyCode('USD');
 	
 	// Create a credit card payment.
 	$creditCardPayment = new FirstGivingCreditCardPayment();
@@ -52,8 +54,6 @@ have is:
 	$creditCardPayment->setBillToCountry('US');
 	$creditCardPayment->setBillToEmail('test@example.com');
 	$creditCardPayment->setBillToPhone('1233211234');
-	$creditCardPayment->setAmount(10.00);
-	$creditCardPayment->setCurrencyCode('USD');
 	
 	try {
 	

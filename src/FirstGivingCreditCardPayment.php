@@ -37,6 +37,7 @@ class FirstGivingCreditCardPayment extends FirstGivingAbstractPayment {
 	private $ccExpDateYear;
 	private $ccCardValidationNum;
 	private $billingDescriptor;
+    private $cardOnFileId;
 	
 	/**
 	 * @return the $ccNumber
@@ -121,5 +122,14 @@ class FirstGivingCreditCardPayment extends FirstGivingAbstractPayment {
 		$this->billingDescriptor = $billingDescriptor;
 	}
 
-	
+    public function setCardOnFileId($cardOnFileId)
+    {
+        $this->cardOnFileId = $cardOnFileId;
+    }
+
+    public function getCardOnFileId()
+    {
+        return $this->cardOnFileId;
+    }
+
 }

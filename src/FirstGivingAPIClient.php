@@ -1,10 +1,10 @@
 <?php
-// Copyright 2010 FirstGiving.com. All Rights Reserved.
+// Copyright 2010-2012 FirstGiving.com. All Rights Reserved.
 //
 // +---------------------------------------------------------------------------+
-// | FirstGiving.com PHP API Client                                             |
+// | FirstGiving.com PHP API Client                                            |
 // +---------------------------------------------------------------------------+
-// | Copyright (c) 2010 FirstGiving.com                                        |
+// | Copyright (c) 2010-2012 FirstGiving.com                                   |
 // | All rights reserved.                                                      |
 // |                                                                           |
 // | Redistribution and use in source and binary forms, with or without        |
@@ -12,10 +12,10 @@
 // | are met:                                                                  |
 // |                                                                           |
 // | 1. Redistributions of source code must retain the above copyright         |
-// |    notice, this list of conditions and the following disclaimer.          |
+// |	notice, this list of conditions and the following disclaimer.          |
 // | 2. Redistributions in binary form must reproduce the above copyright      |
-// |    notice, this list of conditions and the following disclaimer in the    |
-// |    documentation and/or other materials provided with the distribution.   |
+// |	notice, this list of conditions and the following disclaimer in the    |
+// |	documentation and/or other materials provided with the distribution.   |
 // |                                                                           |
 // | THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR      |
 // | IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES |
@@ -38,6 +38,9 @@ require_once dirname(__FILE__) . '/FirstGivingCreditCardPayment.php';
 require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileRequest.php';
 require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileResponse.php';
 require_once dirname(__FILE__) . '/FirstGivingECheckPayment.php';
+require_once dirname(__FILE__) . '/FirstGivingIdealPaymentInquiryResponse.php';
+require_once dirname(__FILE__) . '/FirstGivingIdealRedirectResponse.php';
+require_once dirname(__FILE__) . '/FirstGivingIdealRequest.php';
 require_once dirname(__FILE__) . '/FirstGivingCreditCardDonationResponse.php';
 require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutRequest.php';
 require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutRedirectResponse.php';
@@ -46,7 +49,8 @@ require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutBuyerInformat
 require_once dirname(__FILE__) . '/Exception/FirstGivingGeneralException.php';
 require_once dirname(__FILE__) . '/Exception/FirstGivingCurlException.php';
 require_once dirname(__FILE__) . '/Exception/FirstGivingInvalidInputException.php';
-
+require_once dirname(__FILE__) . '/FirstGivingCardOnFileResponse.php';
+require_once dirname(__FILE__) . '/FirstGivingTransactionDetailResponse.php';
 
 class FirstGivingAPIClient {
 
@@ -71,6 +75,22 @@ class FirstGivingAPIClient {
 		$this->_security_token = $securityToken;
 		$this->_api_endpoint = $apiEndpoint;
 		$this->_logger = $logger;
+	}
+
+	public function getApplicationId() {
+		return $this->_application_id;
+	}
+
+	public function setApplicationId($applicationId) {
+		$this->_application_id = $applicationId;
+	}
+
+	public function getSecurityToken() {
+		return $this->_security_token;
+	}
+
+	public function setSecurityToken($securityToken) {
+		$this->_security_token = $securityToken;
 	}
 
 	/**
@@ -98,6 +118,131 @@ class FirstGivingAPIClient {
 
 		return $firstGivingResponseObject;
 
+	}
+
+	/**
+	 * Get a list of the application's transactions
+	 * 
+	 * @param integer $page page number to return. Must be >= 1 if provided
+	 * @param integer $pageSize the number of records per page to return. Maximum is 100 if provided. Default page size is 100.
+	 * @param integer $dateFrom optional unix timestamp. only transactions on or after this time will be returned if provided.
+	 * @param boolean $count return only the count of transactions. page & pageSize options have no affect when enabled.
+	 */
+	public function getTransactionList($page = NULL, $pageSize = NULL, $dateFrom = NULL, $count = FALSE) {
+		$params = array();
+		if ($count !== TRUE) {
+			if ($page !== NULL) {
+				$params['page'] = $page;
+			}
+			if ($pageSize !== NULL) {
+				$params['page_size'] = $pageSize;
+			}
+		}
+		if ($dateFrom !== NULL) {
+			$params['date_from'] = $dateFrom;
+		}
+		if ($count === TRUE) {
+			$params['count'] = 'on';
+		}
+		$restRequestObject = $this->sendApiRequest('/transaction/list', 'GET', $params);
+
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+		if ($count === TRUE) {
+			return $xmlObject->firstGivingResponse->row_count;
+		}
+		$transactions = array();
+		foreach ($xmlObject->firstGivingResponse->transactions as $transaction) {
+			$transactions[] = (string) $transaction->transaction_number;
+		}
+		return $transactions;
+	}
+
+	/**
+	 * Get the details of a specific transaction
+	 * 
+	 * @param transactionNumber string id of the transaction to lookup
+	 */
+	public function getTransactionDetail($transactionId) {
+		$restRequestObject = $this->sendApiRequest(
+									'/transaction/detail', 
+									'GET',
+									array(
+										'transactionId' => $transactionId
+									)
+								);
+
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+		$r = $xmlObject->firstGivingResponse;
+
+		$respObj = new FirstGivingTransactionDetailResponse();
+		$respObj->setAmount((string) $r->amount);
+		$respObj->setBillToAddressLine1((string) $r->billToAddressLine1);
+		$respObj->setBillToAddressLine2((string) $r->billToAddressLine2);
+		$respObj->setBillToAddressLine3((string) $r->billToAddressLine3);
+		$respObj->setBillToCity((string) $r->billToCity);
+		$respObj->setBillToCountry((string) $r->billToCountry);
+		$respObj->setBillToEmail((string) $r->billToEmail);
+		$respObj->setBillToFirstName((string) $r->billToFirstName);
+		$respObj->setBillToLastName((string) $r->billToLastName);
+		$respObj->setBillToMiddleName((string) $r->billToMiddleName);
+		$respObj->setBillToPhone((string) $r->billToPhone);
+		$respObj->setBillToState((string) $r->billToState);
+		$respObj->setBillToTitle((string) $r->billToTitle);
+		$respObj->setBillToZip((string) $r->billToZip);
+		$respObj->setCharityId((string) $r->charityId);
+		$respObj->setCurrencyCode((string) $r->currencyCode);
+		$respObj->setDescription((string) $r->description);
+		$respObj->setDonationMessage((string) $r->donationMessage);
+		$respObj->setEventId((string) $r->eventId);
+		$respObj->setFundraiserId((string) $r->fundraiserId);
+		$respObj->setHonorMemoryName((string) $r->honorMemoryName);
+		$respObj->setOrderId((string) $r->orderId);
+		$respObj->setTransactionId((string) $r->transactionId);
+		$respObj->setStatus((string) $r->status);
+		$respObj->setCommissionFees((string) $r->commissionFees);
+		$respObj->setCcFees((string) $r->ccFees);
+		$respObj->setTotalFees((string) $r->totalFees);
+		$respObj->setNetToOrganization((string) $r->netToOrganization);
+		$respObj->setPaymentId((string) $r->paymentId);
+		$respObj->setPaymentStatus((string) $r->paymentStatus);
+		$respObj->setPostingDate((string) $r->postingDate);
+
+		return $respObj;
+	}
+
+	public function getIdealBankList() {
+		$restRequestObject = $this->sendApiRequest('/ideal/banks', 'GET');
+
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+		$banks = array();
+
+		foreach ($xmlObject->firstGivingResponse->banks->bank as $bank) {
+			$banks[(string) $bank->id] = (string) $bank->name;
+		}
+		return $banks;
+	}
+
+	public function getIdealPaymentInquiry($idealPaymentRequestId) {
+		$restResponseObject = $this->sendApiRequest(
+									'/ideal/paymentinquiry',
+									'GET',
+									array(
+										'idealPaymentRequestId' => $idealPaymentRequestId
+									)
+								);
+
+		$xmlObject = simplexml_load_string($restResponseObject->getResponseBody());
+		$r = $xmlObject->firstGivingResponse;
+
+		$respObj = new FirstGivingIdealPaymentInquiryResponse();
+		$respObj->idealPaymentRequestId = $idealPaymentRequestId;
+		$respObj->setAmount((string) $r->amount);
+		$respObj->setStatus((string) $r->status);
+		$respObj->setTransactionId( (string) $r->transactionId);
+		$respObj->setConsumerCity( (string) $r->consumerCity);
+		$respObj->setConsumerName( (string) $r->consumerName);
+
+		return $respObj;
 	}
 
 	/**
@@ -137,6 +282,29 @@ class FirstGivingAPIClient {
 		return $firstGivingPaypalCreditCardDonationResponse;
 	}
 
+
+	/**
+	 *
+	 * @param FirstGivingIdealRequest $idealRequest
+	 * @param <type> $remoteAddr
+	 * @return <type> 
+	 */
+	public function getIdealRedirect(FirstGivingIdealRequest $idealRequest, $remoteAddr = null) {
+
+		// If no remote addr was manually passed, set it to the remote addr reported by the web server.
+		if($remoteAddr == null) {
+			$remoteAddr = $_SERVER['REMOTE_ADDR'];
+		}
+
+		// Send the array of values to FirstGiving.
+		$restResponseObject = $this->sendApiRequest('/ideal/paymentrequest', 'GET', $idealRequest->toArray());
+
+		/* @var $firstGivingIdealResponse FirstGivingPaypalCreditCardDonationResponse */
+		$firstGivingIdealResponse = $this->createIdealRedirectResponseObject($restResponseObject);
+
+		return $firstGivingIdealResponse;
+	}
+
 	/**
 	 * Captures a payment from the buyer identified by $expresscheckoutsessionid.
 	 * @param $expresscheckoutsessionid
@@ -148,7 +316,7 @@ class FirstGivingAPIClient {
 		$restApiInputValues = array();
 		$restApiInputValues['expresscheckoutsession'] = $expresscheckoutsessionid;
 
-    	// Send the array of values to FirstGiving.
+		// Send the array of values to FirstGiving.
 		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutpayment', 'POST', $restApiInputValues);
 
 		/* @var $firstGivingPaypalExpressCheckoutPaymentResponse FirstGivingPaypalExpressCheckoutPaymentResponse */
@@ -167,8 +335,8 @@ class FirstGivingAPIClient {
 		$restApiInputValues = $this->assembleRestApiInputValuesForCreditCardDonation($donationObject, $paymentInformationObject, $remoteAddr);
 
 		// Add the recurring values.
-        $restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
-        $restApiInputvalues['ccType'] = $paymentInformationObject->getCcType();
+		$restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
+		$restApiInputvalues['ccType'] = $paymentInformationObject->getCcType();
 		$restApiInputValues['recurringBillingFrequency'] = $frequency;
 		$restApiInputValues['recurringBillingTerm'] = $term;
 
@@ -179,6 +347,22 @@ class FirstGivingAPIClient {
 		$firstGivingCCProfileResponseObject = $this->createRecurringCreditCardProfileResponseObject($restResponseObject);
 
 		return $firstGivingCCProfileResponseObject;
+
+	}
+
+	/**
+	 * Create a new card on file.
+	 * @return FirstGivingCardOnFileResponse
+	 */
+	public function createCardOnFile($restApiInputValues) {
+
+		// Send the array of values to FirstGiving.
+		$restResponseObject = $this->sendApiRequest('/cardonfile', 'POST', $restApiInputValues);
+
+		/* @var $firstGivingCardOnFileResponseObject FirstGivingCardOnFileResponse */
+		$firstGivingCardOnFileResponseObject = $this->createCardOnFileResponseObject($restResponseObject);
+
+		return $firstGivingCardOnFileResponseObject;
 
 	}
 
@@ -424,6 +608,38 @@ class FirstGivingAPIClient {
 		return $helloResponse;
 	}
 
+	private function createIdealPaymentEnquiryObject(RestRequest $restRequestObject) {
+
+		$response = new FirstGivingIdealPaymentEnquiryResponse();
+
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+
+		$rObj = $xmlObject->firstGivingResponse;
+
+		$response->setAmount($rObj->amount);
+		$response->setStatus($rObj->status);
+		$response->setTransactionId($rObj->transactionId);
+
+		return $response;
+	}
+
+	private function createIdealRedirectResponseObject(RestRequest $restRequestObject) {
+
+		// Create the response object.
+		$response = new FirstGivingIdealRedirectResponse();
+
+		// Convert to an xml object.
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+
+		$rObj = $xmlObject->firstGivingResponse;
+		$response->setRedirectUrl((string) $rObj->redirectUrl);
+		$response->setNote((string) $rObj->note);
+		$response->setIdealPaymentRequestId((string) $rObj->idealPaymentRequestId);
+
+		return $response;
+
+	}
+
 	/**
 	 * Converts a generic REST request response into a proper FirstGiving Paypal donation response object.
 	 * @param RestRequest $restRequestObject
@@ -499,15 +715,40 @@ class FirstGivingAPIClient {
 		// Create the response object.
 		$response = new FirstGivingRecurringCreditCardProfileResponse();
 
-        // Convert to an xml object.
+		// Convert to an xml object.
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
 
 		$response->setRawResponse($restRequestObject->getResponseBody());
 		$response->setResponseCode($restRequestObject->getHttpResponseCode());
-        $response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringDonationProfileId));
+		$response->setRecurringBillingProfileId(current($xmlObject->firstGivingResponse->recurringDonationProfileId));
 
 		return $response;
 	}
+
+
+	/**
+	 * Converts a generic REST request response into a proper FirstGiving credit card response object.
+	 * @param RestRequest $restRequestObject
+	 * @return FirstGivingCardOnFileResponse
+	 */
+	private function createCardOnFileResponseObject(RestRequest $restRequestObject) {
+
+		// Create the response object.
+		$response = new FirstGivingCardOnFileResponse();
+
+		// Convert to an xml object.
+		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
+
+		$response->setRawResponse($restRequestObject->getResponseBody());
+		$response->setResponseCode($restRequestObject->getHttpResponseCode());
+		$response->setCardOnFileId(current($xmlObject->firstGivingResponse->cardOnFileId));
+
+		return $response;
+	}
+
+
+
+
 
 	/**
 	 * Scans through xml returned from the verifiy method and returns the bool valid element text value.
@@ -533,6 +774,7 @@ class FirstGivingAPIClient {
 	private function assembleRestApiInputValuesForCreditCardDonation(FirstGivingDonation $donationObject, FirstGivingCreditCardPayment $paymentInformationObject, $remoteAddr) {
 		// Create an array of values to be passed to FirstGiving.
 		$restApiInputValues = array();
+		$restApiInputValues['cardOnFileId'] = $paymentInformationObject->getCardOnFileId();
 		$restApiInputValues['ccNumber'] = $paymentInformationObject->getCcNumber();
 		$restApiInputValues['ccType'] = $paymentInformationObject->getCcType();
 		$restApiInputValues['ccExpDateMonth'] = $paymentInformationObject->getCcExpDateMonth();

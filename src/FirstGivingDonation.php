@@ -184,21 +184,21 @@ class FirstGivingDonation {
 	/**
 	 * @return the $recurringBillingFrequency
 	 */
-	public function getrecurringBillingFrequency() {
+	public function getRecurringBillingFrequency() {
 		return $this->recurringBillingFrequency;
 	}
 
 	/**
 	 * @return the $recurringBillingTerm
 	 */
-	public function getrecurringBillingTerm() {
+	public function getRecurringBillingTerm() {
 		return $this->recurringBillingTerm;
 	}
 
 	/**
 	 * @return the $recurringBillingAmount
 	 */
-	public function getrecurringBillingAmount() {
+	public function getRecurringBillingAmount() {
 		return $this->recurringBillingAmount;
 	}
 
@@ -219,21 +219,21 @@ class FirstGivingDonation {
 	/**
 	 * @param $recurringBillingFrequency the $recurringBillingFrequency to set
 	 */
-	public function setrecurringBillingFrequency($recurringBillingFrequency) {
+	public function setRecurringBillingFrequency($recurringBillingFrequency) {
 		$this->recurringBillingFrequency = $recurringBillingFrequency;
 	}
 
 	/**
 	 * @param $recurringBillingTerm the $recurringBillingTerm to set
 	 */
-	public function setrecurringBillingTerm($recurringBillingTerm) {
+	public function setRecurringBillingTerm($recurringBillingTerm) {
 		$this->recurringBillingTerm = $recurringBillingTerm;
 	}
 
 	/**
 	 * @param $recurringBillingAmount the $recurringBillingAmount to set
 	 */
-	public function setrecurringBillingAmount($recurringBillingAmount) {
+	public function setRecurringBillingAmount($recurringBillingAmount) {
 		$this->recurringBillingAmount = $recurringBillingAmount;
 	}
 

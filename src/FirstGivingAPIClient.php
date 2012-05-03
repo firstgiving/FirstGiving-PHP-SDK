@@ -151,8 +151,8 @@ class FirstGivingAPIClient {
 			return $xmlObject->firstGivingResponse->row_count;
 		}
 		$transactions = array();
-		foreach ($xmlObject->firstGivingResponse->transactions as $transaction) {
-			$transactions[] = (string) $transaction->transaction_number;
+		foreach ($xmlObject->firstGivingResponse->transactions->transactionId as $transactionId) {
+			$transactions[] = (string) $transactionId;
 		}
 		return $transactions;
 	}
@@ -172,7 +172,7 @@ class FirstGivingAPIClient {
 								);
 
 		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		$r = $xmlObject->firstGivingResponse;
+		$r = $xmlObject->firstGivingResponse->transaction;
 
 		$respObj = new FirstGivingTransactionDetailResponse();
 		$respObj->setAmount((string) $r->amount);

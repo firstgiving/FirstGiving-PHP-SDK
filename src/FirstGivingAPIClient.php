@@ -37,15 +37,7 @@ require_once dirname(__FILE__) . '/FirstGivingAbstractPayment.php';
 require_once dirname(__FILE__) . '/FirstGivingCreditCardPayment.php';
 require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileRequest.php';
 require_once dirname(__FILE__) . '/FirstGivingRecurringCreditCardProfileResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingECheckPayment.php';
-require_once dirname(__FILE__) . '/FirstGivingIdealPaymentInquiryResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingIdealRedirectResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingIdealRequest.php';
 require_once dirname(__FILE__) . '/FirstGivingCreditCardDonationResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutRequest.php';
-require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutRedirectResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutPaymentResponse.php';
-require_once dirname(__FILE__) . '/FirstGivingPaypalExpressCheckoutBuyerInformation.php';
 require_once dirname(__FILE__) . '/Exception/FirstGivingGeneralException.php';
 require_once dirname(__FILE__) . '/Exception/FirstGivingCurlException.php';
 require_once dirname(__FILE__) . '/Exception/FirstGivingInvalidInputException.php';
@@ -157,6 +149,7 @@ class FirstGivingAPIClient {
 		return $transactions;
 	}
 
+
 	/**
 	 * Get the details of a specific transaction
 	 * 
@@ -210,120 +203,6 @@ class FirstGivingAPIClient {
 		return $respObj;
 	}
 
-	public function getIdealBankList() {
-		$restRequestObject = $this->sendApiRequest('/ideal/banks', 'GET');
-
-		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-		$banks = array();
-
-		foreach ($xmlObject->firstGivingResponse->banks->bank as $bank) {
-			$banks[(string) $bank->id] = (string) $bank->name;
-		}
-		return $banks;
-	}
-
-	public function getIdealPaymentInquiry($idealPaymentRequestId) {
-		$restResponseObject = $this->sendApiRequest(
-									'/ideal/paymentinquiry',
-									'GET',
-									array(
-										'idealPaymentRequestId' => $idealPaymentRequestId
-									)
-								);
-
-		$xmlObject = simplexml_load_string($restResponseObject->getResponseBody());
-		$r = $xmlObject->firstGivingResponse;
-
-		$respObj = new FirstGivingIdealPaymentInquiryResponse();
-		$respObj->idealPaymentRequestId = $idealPaymentRequestId;
-		$respObj->setAmount((string) $r->amount);
-		$respObj->setStatus((string) $r->status);
-		$respObj->setTransactionId( (string) $r->transactionId);
-		$respObj->setConsumerCity( (string) $r->consumerCity);
-		$respObj->setConsumerName( (string) $r->consumerName);
-
-		return $respObj;
-	}
-
-	/**
-	 *
-	 * @param FirstGivingPaypalExpressCheckoutRequest $expressCheckoutRedirectRequest
-	 * $remoteAddr string IP address of the remote user's computer.
-	 * @return FirstGivingPaypalExpressCheckoutRedirectResponse
-	 */
-	public function getExpressCheckoutRedirect(FirstGivingPaypalExpressCheckoutRequest $expressCheckoutRedirectRequest, $remoteAddr = null) {
-
-		// If no remote addr was manually passed, set it to the remote addr reported by the web server.
-		if($remoteAddr == null) {
-			$remoteAddr = $_SERVER['REMOTE_ADDR'];
-		}
-
-		// Create an array of values to be passed to FirstGiving.
-		$restApiInputValues = array();
-		$restApiInputValues['amount'] = $expressCheckoutRedirectRequest->getAmount();
-		$restApiInputValues['currencyCode'] = $expressCheckoutRedirectRequest->getCurrencyCode();
-		$restApiInputValues['returnUrl'] = $expressCheckoutRedirectRequest->getReturnUrl();
-		$restApiInputValues['cancelUrl'] = $expressCheckoutRedirectRequest->getCancelUrl();
-		$restApiInputValues['fundraiserId'] = $expressCheckoutRedirectRequest->getFundraiserId();
-		$restApiInputValues['charityId'] = $expressCheckoutRedirectRequest->getCharityId();
-		$restApiInputValues['eventId'] = $expressCheckoutRedirectRequest->getEventId();
-		$restApiInputValues['orderId'] = $expressCheckoutRedirectRequest->getOrderId();
-		$restApiInputValues['description'] = $expressCheckoutRedirectRequest->getDescription();
-		$restApiInputValues['remoteAddr'] = $remoteAddr;
-		$restApiInputValues['reportDonationToTaxAuthority'] = ($expressCheckoutRedirectRequest->getReportDonationToTaxAuthority() == true) ? '1' : '0';
-		$restApiInputValues['personalIdentificationNumber'] = ($expressCheckoutRedirectRequest->getPersonalIdentificationNumber() == null) ? '' : $expressCheckoutRedirectRequest->getPersonalIdentificationNumber();
-
-		// Send the array of values to FirstGiving.
-		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutrequest', 'GET', $restApiInputValues);
-
-		/* @var $firstGivingPaypalCreditCardDonationResponse FirstGivingPaypalCreditCardDonationResponse */
-		$firstGivingPaypalCreditCardDonationResponse = $this->createPaypalExpressCheckoutRedirectResponseObject($restResponseObject);
-
-		return $firstGivingPaypalCreditCardDonationResponse;
-	}
-
-
-	/**
-	 *
-	 * @param FirstGivingIdealRequest $idealRequest
-	 * @param <type> $remoteAddr
-	 * @return <type> 
-	 */
-	public function getIdealRedirect(FirstGivingIdealRequest $idealRequest, $remoteAddr = null) {
-
-		// If no remote addr was manually passed, set it to the remote addr reported by the web server.
-		if($remoteAddr == null) {
-			$remoteAddr = $_SERVER['REMOTE_ADDR'];
-		}
-
-		// Send the array of values to FirstGiving.
-		$restResponseObject = $this->sendApiRequest('/ideal/paymentrequest', 'GET', $idealRequest->toArray());
-
-		/* @var $firstGivingIdealResponse FirstGivingPaypalCreditCardDonationResponse */
-		$firstGivingIdealResponse = $this->createIdealRedirectResponseObject($restResponseObject);
-
-		return $firstGivingIdealResponse;
-	}
-
-	/**
-	 * Captures a payment from the buyer identified by $expresscheckoutsessionid.
-	 * @param $expresscheckoutsessionid
-	 * @return FirstGivingPaypalExpressCheckoutPaymentResponse
-	 */
-	public function captureExpressCheckoutPayment($expresscheckoutsessionid) {
-
-		// Create an array of values to be passed to FirstGiving.
-		$restApiInputValues = array();
-		$restApiInputValues['expresscheckoutsession'] = $expresscheckoutsessionid;
-
-		// Send the array of values to FirstGiving.
-		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutpayment', 'POST', $restApiInputValues);
-
-		/* @var $firstGivingPaypalExpressCheckoutPaymentResponse FirstGivingPaypalExpressCheckoutPaymentResponse */
-		$firstGivingPaypalExpressCheckoutPaymentResponse = $this->createPaypalExpressCheckoutPaymentResponpseObject($restResponseObject);
-
-		return $firstGivingPaypalExpressCheckoutPaymentResponse;
-	}
 
 	/**
 	 * Create a recurring donations profile.
@@ -347,8 +226,8 @@ class FirstGivingAPIClient {
 		$firstGivingCCProfileResponseObject = $this->createRecurringCreditCardProfileResponseObject($restResponseObject);
 
 		return $firstGivingCCProfileResponseObject;
-
 	}
+
 
 	/**
 	 * Create a new card on file.
@@ -391,6 +270,7 @@ class FirstGivingAPIClient {
 
 	}
 
+
 	/**
 	 * Submit a donation to FirstGiving's web API.
 	 *
@@ -414,6 +294,7 @@ class FirstGivingAPIClient {
 
 	}
 
+
 	/**
 	 * Returns the original array with nulls removed.
 	 * @param $inputArray
@@ -428,50 +309,6 @@ class FirstGivingAPIClient {
 		return $newArray;
 	}
 
-	/**
-	 * Returns all of the information about the buyer as provided by Paypal's express checkout interface.
-	 * @param $expresscheckoutsessionid
-	 * @return FirstGivingPaypalExpressCheckoutBuyerInformation
-	 */
-	public function getPaypalExpressCheckoutBuyerInformation($expresscheckoutsessionid) {
-
-		// Send the array of values to FirstGiving.
-		$restResponseObject = $this->sendApiRequest('/paypal/expresscheckoutbuyerinformation/'.$expresscheckoutsessionid, 'GET', array());
-
-		/* @var $firstGivingPaypalExpressCheckoutBuyerInformation FirstGivingPaypalExpressCheckoutBuyerInformation */
-		$firstGivingPaypalExpressCheckoutBuyerInformation = $this->createPaypalExpressCheckoutBuyerInformationObject($restResponseObject);
-
-		return $firstGivingPaypalExpressCheckoutBuyerInformation;
-	}
-
-	/**
-	 * Loads a buyer information object.
-	 * @param $restResponseObject
-	 * @return FirstGivingPaypalExpressCheckoutBuyerInformation
-	 */
-	public function createPaypalExpressCheckoutBuyerInformationObject($restResponseObject) {
-
-		// Convert to an xml object.
-		$xmlObject = simplexml_load_string($restResponseObject->getResponseBody());
-
-		$buyerInfo = new FirstGivingPaypalExpressCheckoutBuyerInformation();
-		$buyerInfo->setFirstName(current($xmlObject->firstGivingResponse->firstName));
-		$buyerInfo->setLastName(current($xmlObject->firstGivingResponse->lastName));
-		$buyerInfo->setEmail(current($xmlObject->firstGivingResponse->email));
-		$buyerInfo->setCountry(current($xmlObject->firstGivingResponse->country));
-		$buyerInfo->setAddress1(current($xmlObject->firstGivingResponse->address1));
-		if(current($xmlObject->firstGivingResponse->address2) !== false) {
-			$buyerInfo->setAddress2(current($xmlObject->firstGivingResponse->address2));
-		}
-		$buyerInfo->setCity(current($xmlObject->firstGivingResponse->city));
-		$buyerInfo->setState(current($xmlObject->firstGivingResponse->state));
-		$buyerInfo->setZip(current($xmlObject->firstGivingResponse->zip));
-		$buyerInfo->setCurrencyCode(current($xmlObject->firstGivingResponse->currencyCode));
-		$buyerInfo->setAmount(current($xmlObject->firstGivingResponse->amount));
-
-		return $buyerInfo;
-
-	}
 
 
 	/**
@@ -608,77 +445,6 @@ class FirstGivingAPIClient {
 		return $helloResponse;
 	}
 
-	private function createIdealPaymentEnquiryObject(RestRequest $restRequestObject) {
-
-		$response = new FirstGivingIdealPaymentEnquiryResponse();
-
-		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-
-		$rObj = $xmlObject->firstGivingResponse;
-
-		$response->setAmount($rObj->amount);
-		$response->setStatus($rObj->status);
-		$response->setTransactionId($rObj->transactionId);
-
-		return $response;
-	}
-
-	private function createIdealRedirectResponseObject(RestRequest $restRequestObject) {
-
-		// Create the response object.
-		$response = new FirstGivingIdealRedirectResponse();
-
-		// Convert to an xml object.
-		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-
-		$rObj = $xmlObject->firstGivingResponse;
-		$response->setRedirectUrl((string) $rObj->redirectUrl);
-		$response->setNote((string) $rObj->note);
-		$response->setIdealPaymentRequestId((string) $rObj->idealPaymentRequestId);
-
-		return $response;
-
-	}
-
-	/**
-	 * Converts a generic REST request response into a proper FirstGiving Paypal donation response object.
-	 * @param RestRequest $restRequestObject
-	 * @return FirstGivingPaypalExpressCheckoutRedirectResponse
-	 */
-	private function createPaypalExpressCheckoutRedirectResponseObject(RestRequest $restRequestObject) {
-
-		// Create the response object.
-		/* @var $response FirstGivingPaypalExpressCheckoutRedirectResponse */
-		$response = new FirstGivingPaypalExpressCheckoutRedirectResponse();
-
-		// Convert to an xml object.
-		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-
-		$response->setRedirectUrl(current($xmlObject->firstGivingResponse->redirectUrl));
-
-		return $response;
-
-	}
-
-	/**
-	 * Converts a generic REST response into a proper FirstGiving Paypal payment response object.
-	 * @param RestRequest $restRequestObject
-	 * @return FirstGivingPaypalExpressCheckoutPaymentResponse
-	 */
-	private function createPaypalExpressCheckoutPaymentResponpseObject(RestRequest $restRequestObject) {
-
-		// Create the response object.
-		/* @var $paymentResponse FirstGivingPaypalExpressCheckoutPaymentResponse */
-		$paymentResponse = new FirstGivingPaypalExpressCheckoutPaymentResponse();
-
-		// Convert to an xml object.
-		$xmlObject = simplexml_load_string($restRequestObject->getResponseBody());
-
-		$paymentResponse->setTransactionId(current($xmlObject->firstGivingResponse->transactionId));
-
-		return $paymentResponse;
-
-	}
 
 	/**
 	 * Converts a generic REST request response into a proper FirstGiving credit card donation response object.
@@ -812,6 +578,28 @@ class FirstGivingAPIClient {
 		$restApiInputValues['currencyCode'] = $donationObject->getCurrencyCode();
 		$restApiInputValues['recurringBillingFrequency'] = $donationObject->getRecurringBillingFrequency();
 		$restApiInputValues['recurringBillingTerm'] = $donationObject->getRecurringBillingTerm();
+
+		if ($donationObject->getAttributionType() !== null) {
+			$restApiInputValues['attributionType'] = $donationObject->getAttributionType();
+			$restApiInputValues['attributionName'] = $donationObject->getAttributionName();
+			$restApiInputValues['notificationName'] = $donationObject->getNotificationName();
+			$restApiInputValues['attributionEmail'] = $donationObject->getAttributionEmail();
+			$restApiInputValues['attributionAddressLine1'] = $donationObject->getAttributionAddressLine1();
+			$restApiInputValues['attributionAddressLine2'] = $donationObject->getAttributionAddressLine2();
+			$restApiInputValues['attributionCity'] = $donationObject->getAttributionCity();
+			$restApiInputValues['attributionState'] = $donationObject->getAttributionState();
+			$restApiInputValues['attributionZip'] = $donationObject->getAttributionZip();
+		}
+		// set any internal merchant parameters
+		if ($donationObject->getMerchantId() !== null) {
+			$restApiInputValues['merchantId'] = $donationObject->getMerchantId();
+		}
+		if ($donationObject->getMerchantEmail() !== null) {
+			$restApiInputValues['merchantEmail'] = $donationObject->getMerchantEmail();
+		}
+		if ($donationObject->getMerchantName() !== null) {
+			$restApiInputValues['merchantName'] = $donationObject->getMerchantName();
+		}
 
 		return $restApiInputValues;
 	}

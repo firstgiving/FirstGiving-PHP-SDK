@@ -30,7 +30,7 @@
 // +---------------------------------------------------------------------------+
 
 class FirstGivingDonation {
-	
+
 	private $charityId;
 	private $eventId;
 	private $fundraiserId;
@@ -45,7 +45,191 @@ class FirstGivingDonation {
 	private $recurringBillingFrequency;
 	private $recurringBillingTerm;
 	private $recurringBillingAmount;
-	
+
+	// extended attribution fields (internal use only)
+	private $attributionType = null;
+	private $attributionName;
+	private $notificationName;
+	private $attributionEmail;
+	private $attributionAddressLine1;
+	private $attributionAddressLine2;
+	private $attributionCity;
+	private $attributionState;
+	private $attributionZip;
+
+	// merchant parameters (internal use only)
+	private $merchantId = null;
+	private $merchantEmail = null;
+	private $merchantName = null;
+
+	/**
+	 * @return the $attributionType
+	 */
+	public function getAttributionType() {
+		return $this->attributionType;
+	}
+
+	/**
+	 * @param $attributionType the $attributionType to set
+	 */
+	public function setAttributionType($attributionType) {
+		$this->attributionType = $attributionType;
+	}
+
+	/**
+	 * @return the $attributionName
+	 */
+	public function getAttributionName() {
+		return $this->attributionName;
+	}
+
+	/**
+	 * @param $attributionName the $attributionName to set
+	 */
+	public function setAttributionName($attributionName) {
+		$this->attributionName = $attributionName;
+	}
+
+	/**
+	 * @return the $notificationName
+	 */
+	public function getNotificationName() {
+		return $this->notificationName;
+	}
+
+	/**
+	 * @param $notificationName the $notificationName to set
+	 */
+	public function setNotificationName($notificationName) {
+		$this->notificationName = $notificationName;
+	}
+
+	/**
+	 * @return the $attributionEmail
+	 */
+	public function getAttributionEmail() {
+		return $this->attributionEmail;
+	}
+
+	/**
+	 * @param $attributionEmail the $attributionEmail to set
+	 */
+	public function setAttributionEmail($attributionEmail) {
+		$this->attributionEmail = $attributionEmail;
+	}
+
+	/**
+	 * @return the $attributionAddressLine1
+	 */
+	public function getAttributionAddressLine1() {
+		return $this->attributionAddressLine1;
+	}
+
+	/**
+	 * @param $attributionAddressLine1 the $attributionAddressLine1 to set
+	 */
+	public function setAttributionAddressLine1($attributionAddressLine1) {
+		$this->attributionAddressLine1 = $attributionAddressLine1;
+	}
+
+	/**
+	 * @return the $attributionAddressLine2
+	 */
+	public function getAttributionAddressLine2() {
+		return $this->attributionAddressLine2;
+	}
+
+	/**
+	 * @param $attributionAddressLine2 the $attributionAddressLine2 to set
+	 */
+	public function setAttributionAddressLine2($attributionAddressLine2) {
+		$this->attributionAddressLine2 = $attributionAddressLine2;
+	}
+
+	/**
+	 * @return the $attributionCity
+	 */
+	public function getAttributionCity() {
+		return $this->attributionCity;
+	}
+
+	/**
+	 * @param $attributionCity the $attributionCity to set
+	 */
+	public function setAttributionCity($attributionCity) {
+		$this->attributionCity = $attributionCity;
+	}
+
+	/**
+	 * @return the $attributionState
+	 */
+	public function getAttributionState() {
+		return $this->attributionState;
+	}
+
+	/**
+	 * @param $attributionState the $attributionState to set
+	 */
+	public function setAttributionState($attributionState) {
+		$this->attributionState = $attributionState;
+	}
+
+	/**
+	 * @return the $attributionZip
+	 */
+	public function getAttributionZip() {
+		return $this->attributionZip;
+	}
+
+	/**
+	 * @param $attributionZip the $attributionZip to set
+	 */
+	public function setAttributionZip($attributionZip) {
+		$this->attributionZip = $attributionZip;
+	}
+
+	/**
+	 * @return the $merchantId
+	 */
+	public function getMerchantId() {
+		return $this->merchantId;
+	}
+
+	/**
+	 * @param $merchantId the $merchantId to set
+	 */
+	public function setMerchantId($merchantId) {
+		$this->merchantId = $merchantId;
+	}
+
+	/**
+	 * @return the $merchantName
+	 */
+	public function getMerchantName() {
+		return $this->merchantName;
+	}
+
+	/**
+	 * @param $merchantName the $merchantName to set
+	 */
+	public function setMerchantName($merchantName) {
+		$this->merchantName = $merchantName;
+	}
+
+	/**
+	 * @return the $merchantEmail
+	 */
+	public function getMerchantEmail() {
+		return $this->merchantEmail;
+	}
+
+	/**
+	 * @param $merchantId the $merchantEmail to set
+	 */
+	public function setMerchantEmail($merchantEmail) {
+		$this->merchantEmail = $merchantEmail;
+	}
+
 	/**
 	 * @return the $eventId
 	 */

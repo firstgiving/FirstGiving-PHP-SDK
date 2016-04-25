@@ -61,6 +61,7 @@ class FirstGivingDonation {
 	private $merchantId = null;
 	private $merchantEmail = null;
 	private $merchantName = null;
+	private $commissionRate = null;
 
 	/**
 	 * @return the $attributionType
@@ -421,4 +422,18 @@ class FirstGivingDonation {
 		$this->recurringBillingAmount = $recurringBillingAmount;
 	}
 
+	/**
+	 * @return the $commissionRate
+	 */
+	public function getCommissionRate() {
+		return $this->commissionRate;
+	}
+
+	/**
+	 * @param $commissionRate the $commissionRate to set
+	 */
+	public function setCommissionRate($commissionRate) {
+		$this->commissionRate = $commissionRate;
+	}
+	
 }
